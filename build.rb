@@ -11,12 +11,20 @@ system %(rm -rf drugsandwires.fail.cbz drugsandwires.fail; mkdir drugsandwires.f
 File.open('index.txt') do |f|
   f.each_line.map(&:strip).reject { |url| url.empty? }.each_with_index do |url, i|
     filename = "#{i}_#{File.basename(url)}"
+    filename_cli = Shellwords.shellescape(filename)
+    format = File.extname(filename)
     puts filename
     unless File.exists?(filename)
-      puts "downloading #{filename}"
-      system %(curl #{Shellwords.shellescape(url)} --retry 5 -o #{Shellwords.shellescape(filename)})
+      system %(curl #{Shellwords.shellescape(url)} --retry 5 -o #{filename_cli})
     end
-    system %(ln -f #{Shellwords.shellescape(filename)} drugsandwires.fail/#{i.to_s.rjust(4, '0')}#{File.extname(filename)})
+    system %(ln -f #{filename_cli} drugsandwires.fail/#{i.to_s.rjust(4, '0')}#{format})
+    if format.downcase == '.gif'
+      filename_preview = "#{filename_cli[0..-4]}jpg"
+      unless File.exists?(filename_preview)
+        system %(ffmpeg -i #{filename_cli} -i gif-mark.png -filter_complex "overlay=0:0" -frames:v 1 -qscale:v 3 -y #{filename_preview})
+      end
+      system %(ln -f #{filename_preview} drugsandwires.fail/#{i.to_s.rjust(4, '0')}.jpg)
+    end
   end
 end
 

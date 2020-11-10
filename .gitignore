@@ -3,3 +3,4 @@
 *.gif
 *.png
 *.cbz
+!gif-mark.png
